@@ -80,8 +80,8 @@ namespace WeatherForecastAPI.Controllers
         {
             _context.WeatherForecastItems.Add(weatherForecastItem);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetWeatherForecastItem", new { id = weatherForecastItem.Id }, weatherForecastItem);
+            
+            return CreatedAtAction(nameof(GetWeatherForecastItem), new { id = weatherForecastItem.Id }, weatherForecastItem);
 
         }
 
