@@ -23,14 +23,14 @@ namespace WeatherForecastAPI.Controllers
 
         // GET: api/WeatherForecastItems
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WeatherForecastItem>>> GetWeatherForecastItems()
+        public async Task<ActionResult<IEnumerable<WeatherForecastItemDTO>>> GetWeatherForecastItems()
         {
-            return await _context.WeatherForecastItems.ToListAsync();
+            return await _context.WeatherForecastItems.Select(x => ItemToDTO(x)).ToListAsync();
         }
 
         // GET: api/WeatherForecastItems/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<WeatherForecastItem>> GetWeatherForecastItem(long id)
+        public async Task<ActionResult<WeatherForecastItemDTO>> GetWeatherForecastItem(long id)
         {
             var weatherForecastItem = await _context.WeatherForecastItems.FindAsync(id);
 
@@ -39,20 +39,29 @@ namespace WeatherForecastAPI.Controllers
                 return NotFound();
             }
 
-            return weatherForecastItem;
+            return ItemToDTO(weatherForecastItem);
         }
 
         // PUT: api/WeatherForecastItems/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutWeatherForecastItem(long id, WeatherForecastItem weatherForecastItem)
+        public async Task<IActionResult> PutWeatherForecastItem(long id, WeatherForecastItemDTO weatherForecastItemDTO)
         {
-            if (id != weatherForecastItem.Id)
+            if (id != weatherForecastItemDTO.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(weatherForecastItem).State = EntityState.Modified;
+            var weatherForecastItem = await _context.WeatherForecastItems.FindAsync(id);
+            if (weatherForecastItem == null)
+            {
+                return NotFound();
+            }
+
+            weatherForecastItem.Name = weatherForecastItemDTO.Name;
+            weatherForecastItem.IsComplete = weatherForecastItemDTO.IsComplete;
+
+            _context.Entry(weatherForecastItemDTO).State = EntityState.Modified;
 
             try
             {
@@ -76,12 +85,18 @@ namespace WeatherForecastAPI.Controllers
         // POST: api/WeatherForecastItems
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<WeatherForecastItem>> PostWeatherForecastItem(WeatherForecastItem weatherForecastItem)
+        public async Task<ActionResult<WeatherForecastItemDTO>> PostWeatherForecastItem(WeatherForecastItemDTO weatherForecastItemDTO)
         {
+            var weatherForecastItem = new WeatherForecastItem
+            {
+                IsComplete = weatherForecastItemDTO.IsComplete,
+                Name = weatherForecastItemDTO.Name
+            };
+
             _context.WeatherForecastItems.Add(weatherForecastItem);
             await _context.SaveChangesAsync();
             
-            return CreatedAtAction(nameof(GetWeatherForecastItem), new { id = weatherForecastItem.Id }, weatherForecastItem);
+            return CreatedAtAction(nameof(GetWeatherForecastItem), new { id = weatherForecastItem.Id }, ItemToDTO(weatherForecastItem));
 
         }
 
@@ -105,5 +120,12 @@ namespace WeatherForecastAPI.Controllers
         {
             return _context.WeatherForecastItems.Any(e => e.Id == id);
         }
+
+        private static WeatherForecastItemDTO ItemToDTO(WeatherForecastItem weatherForecastItem) => new WeatherForecastItemDTO
+        {
+            Id = weatherForecastItem.Id,
+            Name = weatherForecastItem.Name,
+            IsComplete = weatherForecastItem.IsComplete
+        };
     }
 }
